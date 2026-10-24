@@ -1,8 +1,9 @@
 {
   "name": "we-content-manager",
   "productName": "WE Content Manager",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Wallpaper Engine 订阅内容管理器 — 浏览、预览并打开创意工坊订阅内容",
+  "author": "RAint0",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -39,9 +40,22 @@
     "electronDist": "node_modules/electron/dist",
     "win": {
       "target": [
-        "dir"
+        "nsis"
       ],
       "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "WE Content Manager",
+      "uninstallDisplayName": "WE Content Manager ${version}",
+      "deleteAppDataOnUninstall": true,
+      "runAfterFinish": true,
+      "artifactName": "WECE-Setup-${version}.${ext}"
     }
   },
   "devDependencies": {
