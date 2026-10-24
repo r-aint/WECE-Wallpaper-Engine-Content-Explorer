@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' we-asset: data: blob:; media-src 'self' we-asset: blob:; style-src 'self' 'unsafe-inline'; script-src 'self';" />
+  <title>Wallpaper Engine 内容管理器</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">WE</div>
+      <div class="brand-text">
+        <h1>内容管理器</h1>
+        <div class="dir-host">
+          <button id="rootPath" class="root-path" type="button" title="切换内容来源">
+            <span class="dot"></span><span id="rootPathText">正在检测…</span>
+            <svg viewBox="0 0 24 24" class="caret" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+
+          <div id="dirPanel" class="dir-panel hidden">
+            <div class="dir-head">
+              <h3>内容来源</h3>
+              <button type="button" class="settings-close" id="dirClose" aria-label="关闭">×</button>
+            </div>
+            <div id="dirList" class="dir-list"></div>
+            <button type="button" class="btn dir-add" id="dirAdd">添加目录…</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" class="search-icon" aria-hidden="true">
+        <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" />
+      </svg>
+      <input id="search" type="search" placeholder="搜索标题 / 标签 / ID（按 / 聚焦）" autocomplete="off" />
+      <button id="searchClear" class="search-clear hidden" type="button" aria-label="清空">×</button>
+    </div>
+
+    <div class="actions">
+      <button id="btnRescan" class="btn" type="button" title="重新扫描订阅目录 (F5)">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.08A6 6 0 1 1 12 6a5.96 5.96 0 0 1 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        刷新
+      </button>
+      <button id="btnDetect" class="btn" type="button" title="重新检测 Steam 库、订阅目录与本地项目目录">自动检测</button>
+      <button id="btnPickRoot" class="btn primary" type="button" title="添加订阅目录（可跨多个 Steam 库）(Ctrl+O)">添加目录</button>
+    </div>
+  </header>
+
+  <nav class="filters" id="filters"></nav>
+
+  <div class="toolbar">
+    <span id="statusText" class="status-text">准备就绪</span>
+    <div class="toolbar-right">
+      <label class="select-wrap">
+        <span>排序</span>
+        <select id="sortBy">
+          <option value="title-asc">名称 A→Z</option>
+          <option value="title-desc">名称 Z→A</option>
+          <option value="mtime-desc">最近更新</option>
+          <option value="mtime-asc">最久未更新</option>
+          <option value="size-desc">体积从大到小</option>
+          <option value="size-asc">体积从小到大</option>
+          <option value="kind">按类型</option>
+        </select>
+      </label>
+      <div class="viewtoggle" id="viewToggle">
+        <button type="button" data-view="grid" class="active" title="网格视图">
+          <svg viewBox="0 0 24 24" class="ico"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+        </button>
+        <button type="button" data-view="list" title="列表视图">
+          <svg viewBox="0 0 24 24" class="ico"><path d="M3 4h18v3H3V4zm0 6.5h18v3H3v-3zM3 17h18v3H3v-3z"/></svg>
+        </button>
+      </div>
+
+      <div class="settings-host">
+        <button id="btnAppearance" class="btn" type="button" title="设置：外观 / 场景包解包 / 缓存">
+          <svg viewBox="0 0 24 24" class="ico"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>
+          设置
+        </button>
+
+        <div id="settings" class="settings hidden">
+          <div class="settings-head">
+            <h3>设置</h3>
+            <button type="button" class="settings-close" id="settingsClose" aria-label="关闭">×</button>
+          </div>
+
+          <!-- 分组标签页：一次只显示一组，避免面板过长 -->
+          <div class="settings-tabs" id="settingsTabs" role="tablist">
+            <button type="button" data-pane="appearance" class="active" role="tab">外观</button>
+            <button type="button" data-pane="nsfw" role="tab">NSFW</button>
+            <button type="button" data-pane="pkg" role="tab">场景包</button>
+          </div>
+
+          <div class="settings-pane" data-pane="appearance">
+            <div class="settings-section-head">
+              <span>调整外观</span>
+              <button type="button" class="btn btn-mini" id="settingsReset" title="仅将外观相关选项恢复为默认值">恢复默认</button>
+            </div>
+
+            <div class="settings-group">
+              <div class="settings-label"><span>缩略图大小</span><span class="settings-value" id="setWidthValue">238 px</span></div>
+              <input type="range" id="setWidth" min="170" max="400" step="10" value="238" />
+            </div>
+
+            <div class="settings-group">
+              <div class="settings-label"><span>间距密度</span></div>
+              <div class="segmented" id="setDensity">
+                <button type="button" data-density="compact">紧凑</button>
+                <button type="button" data-density="normal">标准</button>
+                <button type="button" data-density="comfy">宽松</button>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <div class="settings-label"><span>主题色</span></div>
+              <div class="swatches" id="setAccent"></div>
+            </div>
+
+            <div class="settings-group">
+              <div class="settings-label"><span>卡片显示</span></div>
+              <div class="check-row">
+                <label class="check"><input type="checkbox" id="setShowTags" /><span>标签</span></label>
+                <label class="check"><input type="checkbox" id="setShowSize" /><span>体积</span></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-pane hidden" data-pane="nsfw">
+            <div class="settings-section-head">
+              <span>NSFW 内容</span>
+              <span class="settings-count" id="nsfwCount"></span>
+            </div>
+
+            <div class="settings-group">
+              <label class="check check-block">
+                <input type="checkbox" id="setNsfwHide" />
+                <span>隐藏 NSFW 内容</span>
+              </label>
+              <p class="settings-hint">列表、筛选计数与详情翻页都会跳过这些条目。</p>
+            </div>
+
+            <div class="settings-group">
+              <label class="check check-block">
+                <input type="checkbox" id="setNsfwBlur" />
+                <span>模糊 NSFW 封面</span>
+              </label>
+              <p class="settings-hint">只模糊封面，悬停时临时显示原图。</p>
+            </div>
+
+            <div class="settings-group">
+              <div class="settings-label">
+                <span>老板键</span>
+                <span class="kbd-group"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>H</kbd></span>
+              </div>
+              <p class="settings-hint">按下即隐藏窗口并静音，再按一次恢复。</p>
+              <button type="button" class="btn btn-mini btn-block" id="nsfwHideNow">立即隐藏窗口</button>
+            </div>
+          </div>
+
+          <div class="settings-pane hidden" data-pane="pkg">
+            <div class="settings-section-head">
+              <span>场景包解包</span>
+              <span class="settings-count" id="repkgState"></span>
+            </div>
+
+            <div class="settings-group">
+              <div class="pkg-status" id="pkgStatusBox">
+                <span class="pkg-dot"></span>
+                <div class="pkg-status-main">
+                  <span class="pkg-status-title" id="repkgTitle">检测中…</span>
+                  <span class="pkg-status-sub" id="repkgSub"></span>
+                </div>
+              </div>
+              <div class="pkg-actions">
+                <button type="button" class="btn" id="pkgPickBtn">更换 RePKG</button>
+                <button type="button" class="btn" id="pkgResetRepkg">恢复内置</button>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <div class="settings-label">
+                <span>缓存目录</span>
+                <span class="settings-count" id="pkgCacheSize"></span>
+              </div>
+              <div class="path-row">
+                <code class="path-line" id="pkgCachePath"></code>
+                <button type="button" class="btn btn-mini" id="pkgOpenDir">打开</button>
+              </div>
+              <div class="pkg-actions">
+                <button type="button" class="btn" id="pkgChangeDir">更改目录</button>
+                <button type="button" class="btn" id="pkgResetDir">恢复默认</button>
+              </div>
+              <p class="settings-hint">更改目录时会询问：把已有解包结果迁移过去，还是仅切换（旧文件保留在原处）。</p>
+            </div>
+
+            <div class="settings-group">
+              <div class="settings-label"><span>缓存自动清理</span></div>
+              <select id="pkgLimit" class="select-block">
+                <option value="0">不自动清理</option>
+                <option value="512">超过 512 MB</option>
+                <option value="1024">超过 1 GB</option>
+                <option value="2048">超过 2 GB</option>
+                <option value="5120">超过 5 GB</option>
+                <option value="10240">超过 10 GB</option>
+              </select>
+              <div class="pkg-actions">
+                <button type="button" class="btn" id="pkgClearBtn" disabled>清理缓存</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button id="btnSelect" class="btn" type="button" title="多选模式（也可 Ctrl / Shift + 点击卡片）">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        选择
+      </button>
+    </div>
+  </div>
+
+  <main class="content">
+    <div id="grid" class="grid"></div>
+
+    <div id="empty" class="empty hidden">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 2v8.6l3.6-3.6 3.2 3.2 2.6-2.6L19 16V6H5zm3 1.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/></svg>
+      </div>
+      <h2 id="emptyTitle">没有找到内容</h2>
+      <p id="emptyDesc">调整筛选条件，或更换订阅目录。</p>
+      <button id="emptyAction" class="btn primary hidden" type="button">添加订阅目录</button>
+    </div>
+  </main>
+
+  <div id="progress" class="progress hidden"><div class="progress-bar" id="progressBar"></div></div>
+
+  <!-- 详情 / 预览弹窗 -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop" data-close></div>
+    <!-- 切换“项目”的按钮放在弹窗外面，避免和图片 / 视频的切换混在一起 -->
+    <button class="item-nav item-prev" id="itemPrev" type="button" title="上一个项目（Alt + ←）" aria-label="上一个项目">‹</button>
+    <button class="item-nav item-next" id="itemNext" type="button" title="下一个项目（Alt + →）" aria-label="下一个项目">›</button>
+    <div class="modal-card">
+      <button class="modal-close" type="button" data-close aria-label="关闭">×</button>
+      <div class="modal-media" id="modalMedia">
+        <div class="media-stage" id="mediaStage"></div>
+        <!-- 弹窗内的按钮只负责当前项目的媒体：切换图片 / 视频快退快进 -->
+        <button class="nav-btn nav-prev" id="mediaPrev" type="button" title="上一张（←）" aria-label="上一张">‹</button>
+        <button class="nav-btn nav-next" id="mediaNext" type="button" title="下一张（→）" aria-label="下一张">›</button>
+      </div>
+      <aside class="modal-info">
+        <h2 id="modalTitle" class="modal-title"></h2>
+        <div class="meta-row">
+          <span id="modalKind" class="badge"></span>
+          <span id="modalSize" class="meta-muted"></span>
+          <span id="modalIndex" class="meta-muted meta-index"></span>
+        </div>
+        <div id="modalTags" class="tags"></div>
+        <div class="modal-actions" id="modalActions"></div>
+        <div class="modal-section">
+          <h3>路径</h3>
+          <div class="path-box" id="modalPath"></div>
+        </div>
+        <div class="modal-section" id="modalFilesSection">
+          <h3>文件<span id="modalFileCount" class="meta-muted"></span></h3>
+          <ul class="file-list" id="modalFiles"></ul>
+        </div>
+        <div class="modal-section" id="modalDescSection">
+          <h3>描述</h3>
+          <div class="desc" id="modalDesc"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- 多选模式下的批量操作栏 -->
+  <div id="bulkbar" class="bulkbar hidden">
+    <span class="bulk-count" id="bulkCount">已选择 0 项</span>
+    <div class="bulk-actions">
+      <button class="btn" type="button" data-bulk="open" title="用系统默认程序逐一打开已选内容">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M8 5v14l11-7z"/></svg>
+        批量打开
+      </button>
+      <button class="btn" type="button" data-bulk="copyPaths">复制路径</button>
+      <button class="btn" type="button" data-bulk="copyTitles">复制标题</button>
+      <button class="btn" type="button" data-bulk="invert">反选</button>
+      <button class="btn" type="button" data-bulk="clear">取消选择</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

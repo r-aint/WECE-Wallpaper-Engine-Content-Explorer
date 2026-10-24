@@ -1,0 +1,51 @@
+{
+  "name": "we-content-manager",
+  "productName": "WE Content Manager",
+  "version": "1.0.0",
+  "description": "Wallpaper Engine 订阅内容管理器 — 浏览、预览并打开创意工坊订阅内容",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "dist": "electron-builder --win",
+    "dist:dir": "electron-builder --win dir",
+    "dist:nsis": "electron-builder --win nsis"
+  },
+  "keywords": [
+    "wallpaper-engine",
+    "steam",
+    "workshop",
+    "electron"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "build": {
+    "appId": "com.wecontent.manager",
+    "productName": "WE Content Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "asar": false,
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "renderer/**/*",
+      "vendor/**/*",
+      "package.json"
+    ],
+    "electronDist": "node_modules/electron/dist",
+    "win": {
+      "target": [
+        "dir"
+      ],
+      "signAndEditExecutable": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^38.8.6",
+    "electron-builder": "^24.13.3"
+  }
+}
